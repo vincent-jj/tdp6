@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<sys/time.h>
 #include<string.h>
+#include<unistd.h>
 #include<omp.h>
 
 int BS;
@@ -120,7 +121,7 @@ void test_loop1(int* board, int* nbngb, int maxloop, int ldboard, int ldnbngb, i
 // All level 2 loops get a parallelization option
 void test_loop2(int* board, int* nbngb, int maxloop, int ldboard, int ldnbngb, int num_alive){
   int loop;
-  int i, j;
+  int j;
   for (loop = 1; loop <= maxloop; loop++) {
   
     cell(   0, 0   ) = cell(BS, BS);
@@ -129,15 +130,16 @@ void test_loop2(int* board, int* nbngb, int maxloop, int ldboard, int ldnbngb, i
     cell(BS+1, BS+1) = cell( 1,  1);
 
 #pragma omp parallel for schedule(static)
-    for (i = 1; i <= BS; i++) {
-      cell(   i,    0) = cell( i, BS);
-      cell(   i, BS+1) = cell( i,  1);
-      cell(   0,    i) = cell(BS,  i);
-      cell(BS+1,    i) = cell( 1,  i);
+    for (j = 1; j <= BS; j++) {
+      cell(   j,    0) = cell( j, BS);
+      cell(   j, BS+1) = cell( j,  1);
+      cell(   0,    j) = cell(BS,  j);
+      cell(BS+1,    j) = cell( 1,  j);
     }
 
 #pragma omp parallel for schedule(static)
     for (j = 1; j <= BS; j++) {
+      int i;
       for (i = 1; i <= BS; i++) {
 	ngb( i, j ) =
 	  cell( i-1, j-1 ) + cell( i, j-1 ) + cell( i+1, j-1 ) +
@@ -149,6 +151,7 @@ void test_loop2(int* board, int* nbngb, int maxloop, int ldboard, int ldnbngb, i
     num_alive = 0;
 #pragma omp parallel for schedule(static)
     for (j = 1; j <= BS; j++) {
+      int i;
       for (i = 1; i <= BS; i++) {
 	if ( (ngb( i, j ) < 2) ||
 	     (ngb( i, j ) > 3) ) {
@@ -163,7 +166,9 @@ void test_loop2(int* board, int* nbngb, int maxloop, int ldboard, int ldnbngb, i
 	}
       }
     }
-
+    
+    
+    
     /* Avec les celluls sur les bords (utile pour vérifier les comm MPI) */
     /* output_board( BS+2, &(cell(0, 0)), ldboard, loop ); */
 
@@ -179,7 +184,8 @@ void test_loop2(int* board, int* nbngb, int maxloop, int ldboard, int ldnbngb, i
 // All loop except the first one get parallelization option
 void test_loop3(int* board, int* nbngb, int maxloop, int ldboard, int ldnbngb, int num_alive){
   int loop;
-  int i, j;
+  int j;
+  int num_alive_tmp[omp_get_num_threads()];
   for (loop = 1; loop <= maxloop; loop++) {
 
 	cell(   0, 0   ) = cell(BS, BS);
@@ -188,16 +194,18 @@ void test_loop3(int* board, int* nbngb, int maxloop, int ldboard, int ldnbngb, i
 	cell(BS+1, BS+1) = cell( 1,  1);
 	
 #pragma omp parallel for schedule(static)
-	for (i = 1; i <= BS; i++) {
-	    cell(   i,    0) = cell( i, BS);
-	    cell(   i, BS+1) = cell( i,  1);
-	    cell(   0,    i) = cell(BS,  i);
-	    cell(BS+1,    i) = cell( 1,  i);
+	for (j = 1; j <= BS; j++) {
+	    cell(   j,    0) = cell( j, BS);
+	    cell(   j, BS+1) = cell( j,  1);
+	    cell(   0,    j) = cell(BS,  j);
+	    cell(BS+1,    j) = cell( 1,  j);
 	}
 
 #pragma omp parallel for schedule(static)
 	for (j = 1; j <= BS; j++) {
-	    for (i = 1; i <= BS; i++) {
+	  //	  #pragma omp parallel for schedule(static)
+	  int i
+	  for (i = 1; i <= BS; i++) {
 		ngb( i, j ) =
 		    cell( i-1, j-1 ) + cell( i, j-1 ) + cell( i+1, j-1 ) +
 		    cell( i-1, j   ) +                  cell( i+1, j   ) +
@@ -206,10 +214,10 @@ void test_loop3(int* board, int* nbngb, int maxloop, int ldboard, int ldnbngb, i
 	}
 
 	num_alive = 0;
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) 
 	for (j = 1; j <= BS; j++) {
-#pragma omp parallel for schedule(static)
-	    for (i = 1; i <= BS; i++) {
+	  int i;  
+	  for (i = 1; i <= BS; i++) {
 		if ( (ngb( i, j ) < 2) ||
 		     (ngb( i, j ) > 3) ) {
 		    cell(i, j) = 0;
@@ -219,10 +227,13 @@ void test_loop3(int* board, int* nbngb, int maxloop, int ldboard, int ldnbngb, i
 			cell(i, j) = 1;
 		}
 		if (cell(i, j) == 1) {
-		    num_alive ++;
+		  num_alive_tmp[omp_get_thread_num()] ++;
 		}
 	    }
 	}
+	
+	for(j = 0; j<omp_get_thread_num(); ++j)
+	  num_alive += num_alive_tmp[j];
 
         /* Avec les celluls sur les bords (utile pour vérifier les comm MPI) */
         /* output_board( BS+2, &(cell(0, 0)), ldboard, loop ); */
@@ -337,7 +348,7 @@ int main(int argc, char *argv[]){
  
   // OpenMP compute time
   
-  test_loop4(board, nbngb, maxloop, ldboard, ldnbngb, num_alive);
+  test_loop3(board, nbngb, maxloop, ldboard, ldnbngb, num_alive);
   
   t2 = mytimer();
   temps = t2 - t1;
