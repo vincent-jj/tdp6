@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <mpi.h>
+#define true 1
+#define false 0
 
 int BS;
 #define cell(_i_,_j_) board[ldboard*(_j_)+(_i_)]
@@ -48,8 +50,10 @@ int main(int argc, char *argv[]){
   double t1, t2;
   double temps;
   int size, rank; 
-  
-  
+  int dims[2];
+  int periods[2];
+  double t_init;
+
   int *board;
   int *nbngb;
   
@@ -79,6 +83,33 @@ int main(int argc, char *argv[]){
   MPI_Comm_size(&size, MPI_COMM_WORLD);
   MPI_Comm_rank(&rank, MPI_COMM_WORLD);
   
+  MPI_Comm grid_communicator;
+  MPI_Comm row_communicator;
+  MPI_Comm column_communicator;
+
+  t_init = MPI_Wtime();
+
+  MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, FALSE, &grid_communicator);
+  
+  // Generating sub communicator
+  int sub_dimensions_rows[2] = {0,1};
+  int sub_dimensions_columns[2] = {1,0};
+
+  MPI_Cart_sub(grid_communicator, sub_dimensions_rows, &row_communicator);
+  MPI_Cart_sub(grid_communicator, sub_dimensions_column, &column_communicator);
+
+  // Starting Interaction 
+
+  
+
+  // The end
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  
+  if(!rank)
+    printf("Execution time : %f\n", MPI_Wtime()-t_init);
+  
+  MPI_Finalize();
   
   return EXIT_SUCCESS;
 }
