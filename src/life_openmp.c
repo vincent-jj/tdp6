@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/time.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include <omp.h>
 
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
   int i, j, loop, num_alive, maxloop;
   int ldboard, ldnbngb;
   double t1, t2;
-  double temps;
+  double time;
  
   int *board;
   int *nbngb;
@@ -138,9 +138,9 @@ int main(int argc, char* argv[])
     printf("%d \n", num_alive);
   }
 
-  temps = timer() - t1;
+  time = timer() - t1;
   printf("Final number of living cells = %d\n", num_alive);
-  printf("time= %f ms\n",(double)temps * 1000.);
+  printf("time= %f ms\n",(double)time * 1000.);
 
   //output_board( BS, &(cell(1, 1)), ldboard, maxloop);
 
