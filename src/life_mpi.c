@@ -32,7 +32,7 @@ inline double mytimer(void){
   return tp.tv_sec + 1e-6 * tp.tv_usec;
 }
 
-void output_board(int N, int *board, int ldboard, int loop){
+inline void output_board(int N, int *board, int ldboard, int loop){
   int i,j;
   fprintf(stderr, "loop %d\n", loop);
   for (i=0; i<N; i++) {
@@ -50,7 +50,7 @@ void output_board(int N, int *board, int ldboard, int loop){
  * This function generates the iniatl board with one row and one
  * column of living cells in the middle of the board
  */
-int generate_initial_board(int N, int *board, int ldboard){
+inline int generate_initial_board(int N, int *board, int ldboard){
   int i, j, num_alive = 0;
   for (i = 1; i <= N; i++) {
     for (j = 1; j <= N; j++) {
@@ -69,7 +69,7 @@ int generate_initial_board(int N, int *board, int ldboard){
 /*
  * This function process a nbngb block --> process frontier blocks
  */
-void process_frontier(int k, int blocksize, int* board, int frontier, int ldboard, int* nbngb, int ldnbngb){
+inline void process_frontier(int k, int blocksize, int* board, int frontier, int ldboard, int* nbngb, int ldnbngb){
   /* Different process if shared from a column or block frontier */
   if (frontier == ROW){
     int i = k;
@@ -98,7 +98,7 @@ void process_frontier(int k, int blocksize, int* board, int frontier, int ldboar
   exit(EXIT_FAILURE);
 }
 
-void inter_proc_communications(MPI_Request* request, int* neighbours, MPI_Comm grid, int blocksize, int* board, int ldboard, MPI_Datatype block_line){
+inline void inter_proc_communications(MPI_Request* request, int* neighbours, MPI_Comm grid, int blocksize, int* board, int ldboard, MPI_Datatype block_line){
   // Sending / Receving informations to / from the left / right process
   MPI_Isend(&cell(1, 1), blocksize, MPI_INT, neighbours[L], 0, grid, &request[0]);
   MPI_Irecv(&cell(1, blocksize+1), blocksize, MPI_INT, neighbours[R], 0, grid, &request[0]);
@@ -133,7 +133,7 @@ void inter_proc_communications(MPI_Request* request, int* neighbours, MPI_Comm g
 }
 
 /* Function that creates a list of the neighbours for each processes */ 
-void neighbour_table(int* neighbours, MPI_Comm grid, int proc_rank){
+inline void neighbour_table(int* neighbours, MPI_Comm grid, int proc_rank){
   int move, id;
   int coord[2];
   id = 1;
@@ -361,7 +361,7 @@ int main(int argc, char* argv[]){
     // create debug file 
     sprintf(str, "mpi_debug_%d.dat", size);
     FILE *fd = NULL;
-    fd=fopen(fname, "w");
+    fd=fopen(str, "w");
     // JUST TELL ME IF IT WORKS !!
     if (fd != NULL)
       fprintf(fd,"%.2lf", time*1.e3);
