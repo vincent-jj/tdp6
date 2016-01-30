@@ -357,13 +357,17 @@ int main(int argc, char* argv[]){
     // Combien de cellules sont en PLS à la fin de la soirée ?
     printf("Final number of living cells = %d\n", num_alive);
     printf("time=%.2lf ms\n",(double)time * 1.e3);
-    char fname [40];
-    sprintf(fname, "mpi_debug_%d.dat", size);
-    FILE* f=fopen(fname, "w");
+    char str [100];
+    // create debug file 
+    sprintf(str, "mpi_debug_%d.dat", size);
+    FILE *fd = NULL;
+    fd=fopen(fname, "w");
     // JUST TELL ME IF IT WORKS !!
-    if (f != NULL)
-      fprintf(f,"%.2lf", time*1.e3);
-    fclose(f);
+    if (fd != NULL)
+      fprintf(fd,"%.2lf", time*1.e3);
+    else
+      exit(EXIT_FAILURE);
+    fclose(fd);
     output_board( BS, &globboard2[1+ldglobalboard], ldglobalboard, loop_iterations);
   }
   // FREE ALL
